@@ -1,4 +1,4 @@
 export const size = {
-    width: 800,
-    height: 800
+    width: window.innerWidth,
+    height: window.innerHeight
 }

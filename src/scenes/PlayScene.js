@@ -7,10 +7,6 @@ export default class PlayScene extends Phaser.Scene{
         this.roadOrigin=null;
         this.tracks=null;
         this.scalingFactor=3;
-        this.offSet = {
-            left: 300,
-            right: 410
-        }
         this.carWidth = 20;
         this.carMovementSpeed = 150;
         this.speed = 150;
@@ -122,7 +118,7 @@ export default class PlayScene extends Phaser.Scene{
     createTrack = () => {
         let x = this.roadOrigin.x;
         let y = size.height - this.scalingFactor*this.roadOrigin.height;
-        let totalTracks = 18;
+        let totalTracks = 20;
         this.tracks = this.physics.add.group();
         for(let i = 0; i<totalTracks; i++){
             let track = this.tracks.create(x,y,'road')
@@ -134,7 +130,7 @@ export default class PlayScene extends Phaser.Scene{
     }
     recycleTracks = () => {
         this.tracks.getChildren().forEach(track=>{
-            if(track.y>=900){
+            if(track.y>=size.height+track.height){
                 track.y=this.getTopMostTrack()-50
             }
         })
@@ -156,8 +152,10 @@ export default class PlayScene extends Phaser.Scene{
     addOpponent = () => {
         this.opponents = this.physics.add.group();
         let y=0;
+        let trackWidth = this.tracks.getChildren()[0].width;
+        let range = [size.width/2-trackWidth, size.width/2+trackWidth-this.car.width*2];
         for(let i = 0; i<= this.totalOpponents; i++){
-            let x = Phaser.Math.Between(this.offSet.left+20, this.offSet.right+20);
+            let x = Phaser.Math.Between(...range);
             y-=Phaser.Math.Between(...this.opponentRange);
             let opponent = this.opponents.create(x,y,'police')
             .setScale(this.scalingFactor)
