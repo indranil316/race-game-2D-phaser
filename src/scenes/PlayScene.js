@@ -1,17 +1,22 @@
 import Phaser from "phaser";
 import { size } from "../constants";
+import GameState from "../utils/GameState";
 
 export default class PlayScene extends Phaser.Scene{
     constructor(){
         super("playScene");
-        this.roadOrigin=null;
+        this.gassStation=null;
         this.tracks=null;
+        this.color=null;
+        this.name=null;
+        this.map=null;
         this.scalingFactor=3;
         this.carWidth = 20;
         this.carMovementSpeed = 150;
         this.speed = 150;
-        this.opponentSpeedRange = [50,150];
+        this.opponentSpeedRange = [150,200];
         this.opponentSpeed = Phaser.Math.Between(...this.opponentSpeedRange);
+        this.opponentLevelUpSpeed = 50;
         this.opponentRange = [200,400];
         this.opponents=null;
         this.totalOpponents = 20;
@@ -19,11 +24,17 @@ export default class PlayScene extends Phaser.Scene{
         this.scoreText=null;
         this.gameOverText = null;
         this.timer = null;
-        this.timerElapsed=60;
+        this.levelTime=15;
+        this.timerElapsed=this.levelTime;
         this.level = 1;
+        this.gameState = new GameState();
+        this.updateGameStateTimer = null;
     }
-    create(){
-        this.createRoadOrigin();
+    create(){  
+        this.downloadGameData();
+        this.updateGameData();
+        this.setBg();
+        this.createGassStation();
         this.createTrack();
         this.addCar();
         this.addOpponent();
@@ -35,7 +46,41 @@ export default class PlayScene extends Phaser.Scene{
         this.recycleTracks();
         this.updateScoreBoard()
         this.checkCarHittingRoadEnd();
-        this.checkScore();     
+        this.checkScore(); 
+        this.updateOpponentSpeed();    
+    }
+    downloadGameData = () => {
+        const state = GameState.getState();
+        if(state){
+            const {opponentSpeed,score,timerElapsed,level,map} = state;
+            const {color, name}  = map;
+            this.map=map;
+            this.opponentSpeed=opponentSpeed;
+            this.score=score;
+            this.timerElapsed=timerElapsed;
+            this.level=level;
+            this.color=color;
+            this.name=name;
+        }
+        else {
+            this.map = window.GAME_RC.map;
+            const {color, name} = this.map; 
+            this.color=color;
+            this.name=name;
+        }
+    }
+    updateGameData=()=>{
+        this.updateGameStateTimer = window.setInterval(()=>{
+            const {opponentSpeed,score,timerElapsed,level,color,name, map} = this;
+            this.gameState.setState({opponentSpeed,score,timerElapsed,level,color,name, map})
+        },5000);
+       
+    }
+    setBg=()=>{
+        this.cameras.main.setBackgroundColor(this.color);
+    }
+    updateOpponentSpeed=()=>{
+        this.opponents.setVelocityY(this.opponentSpeed);
     }
     checkScore = () => {
         this.opponents.getChildren().forEach(opponent=>{
@@ -55,11 +100,11 @@ export default class PlayScene extends Phaser.Scene{
         };
     
         this.timer = this.time.addEvent(timerConfig);    
-        this.timerText = this.add.text(size.width - 28, 28, `Timer: 60`, {
+        this.timerText = this.add.text(size.width - 28, 28, `Timer: ${this.levelTime}`, {
             fontSize: '28px',
             color: '#000',
         }).setOrigin(1, 0);
-        this.levelText = this.add.text(size.width - 28, 56,'Level: 1',{
+        this.levelText = this.add.text(size.width - 28, 56,`Level: ${this.level}`,{
             fontSize: '28px',
             color: '#000',
         }).setOrigin(1, 0);
@@ -70,8 +115,9 @@ export default class PlayScene extends Phaser.Scene{
     
             if (this.timerElapsed <= 0) {
                 this.level++;
-                this.timerElapsed = 60;
+                this.timerElapsed = this.levelTime;
                 this.timer.reset({ delay: 1000, callback: this.updateTimer, callbackScope: this, loop: true });
+                this.opponentSpeed+=this.opponentLevelUpSpeed;
             }
     
             this.timerText.setText(`Timer: ${this.timerElapsed}`);
@@ -80,8 +126,8 @@ export default class PlayScene extends Phaser.Scene{
     };
     checkCarHittingRoadEnd = () => {
         let carHalfWidth = this.car.width * 0.5;
-        let roadLeftBoundary = this.roadOrigin.x - this.roadOrigin.displayWidth * 0.2;
-        let roadRightBoundary = this.roadOrigin.x + this.roadOrigin.displayWidth * 0.1;
+        let roadLeftBoundary = this.gassStation.x - this.gassStation.displayWidth * 0.2;
+        let roadRightBoundary = this.gassStation.x + this.gassStation.displayWidth * 0.1;
     
         if (this.car.x - carHalfWidth <= roadLeftBoundary) {
             this.car.x = roadLeftBoundary + carHalfWidth;
@@ -109,19 +155,19 @@ export default class PlayScene extends Phaser.Scene{
         })
         opponent.y = MIN - Phaser.Math.Between(...this.opponentRange);
     }
-    createRoadOrigin = () => {
-        this.roadOrigin= this.physics.add.image(size.width/2,size.height,'track')
+    createGassStation = () => {
+        this.gassStation= this.physics.add.image(size.width/2,size.height,`${this.name}-gassStation`)
         .setOrigin(0.3,1)
         .setScale(this.scalingFactor);
-        this.roadOrigin.body.setVelocityY(this.speed)
+        this.gassStation.body.setVelocityY(this.speed)
     }
     createTrack = () => {
-        let x = this.roadOrigin.x;
-        let y = size.height - this.scalingFactor*this.roadOrigin.height;
+        let x = this.gassStation.x;
+        let y = size.height - this.scalingFactor*this.gassStation.height;
         let totalTracks = 20;
         this.tracks = this.physics.add.group();
         for(let i = 0; i<totalTracks; i++){
-            let track = this.tracks.create(x,y,'road')
+            let track = this.tracks.create(x,y,`${this.name}-road`)
             .setOrigin(0.6,1)
             .setScale(this.scalingFactor);
             y = y-track.height;   
@@ -172,7 +218,9 @@ export default class PlayScene extends Phaser.Scene{
     collide = () => {
         this.physics.pause()
         this.time.paused=true;
-        this.timerElapsed=60;
+        this.timerElapsed=this.levelTime;
+        window.clearInterval(this.updateGameStateTimer);
+        this.gameState.resetState();
         this.gameOver();
     }
     gameOver = () => {
@@ -204,6 +252,7 @@ export default class PlayScene extends Phaser.Scene{
     
         restartButton.on('pointerdown', () => {
             this.time.paused=false;
+            this.level=1;
             this.scene.restart();
         });
     
