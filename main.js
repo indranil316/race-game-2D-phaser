@@ -14,6 +14,9 @@ const config={
   physics:{
     default: 'arcade',
   },
+  input: {
+    touch: true,
+  },
   scene:[Preload, SelectMap, PlayScene]
 }
 const game = new Phaser.Game(config);

@@ -11,6 +11,8 @@ export default class PlayScene extends Phaser.Scene{
         this.name=null;
         this.map=null;
         this.scalingFactor=3;
+        this.leftArrow=null;
+        this.rightArrow=null;
         this.carWidth = 20;
         this.carMovementSpeed = 150;
         this.speed = 150;
@@ -38,6 +40,7 @@ export default class PlayScene extends Phaser.Scene{
         this.createTrack();
         this.addCar();
         this.addOpponent();
+        this.addArrows();
         this.moveCar();
         this.createScoreBoard();
         this.createTimer();
@@ -261,6 +264,34 @@ export default class PlayScene extends Phaser.Scene{
         });
     }    
     
+    addArrows = () => {
+        let offset = {
+            x: 50,
+            y: 100
+        };
+        
+        this.leftArrow = this.add.sprite(offset.x, size.height - offset.y, 'arrow');
+        this.rightArrow = this.add.sprite(size.width - offset.x - 20, size.height - offset.y, 'arrow').setFlipX(true);
+    
+        this.leftArrow.setInteractive();
+        this.rightArrow.setInteractive();
+    
+        this.leftArrow.on('pointerdown', () => {
+            this.car.setVelocityX(-this.carMovementSpeed);
+        });
+        
+        this.leftArrow.on('pointerup', () => {
+            this.car.setVelocityX(0);
+        });
+    
+        this.rightArrow.on('pointerdown', () => {
+            this.car.setVelocityX(this.carMovementSpeed);
+        });
+    
+        this.rightArrow.on('pointerup', () => {
+            this.car.setVelocityX(0);
+        });
+    };
     
     
     moveCar = () => {
