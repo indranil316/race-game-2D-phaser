@@ -29,6 +29,8 @@ export default class PlayScene extends Phaser.Scene{
         this.levelTime=15;
         this.timerElapsed=this.levelTime;
         this.level = 1;
+        this.highScore=0;
+        this.highScoreText=null;
         this.gameState = new GameState();
         this.updateGameStateTimer = null;
     }
@@ -42,6 +44,7 @@ export default class PlayScene extends Phaser.Scene{
         this.addOpponent();
         this.addArrows();
         this.moveCar();
+        this.getHighScore();
         this.createScoreBoard();
         this.createTimer();
     }
@@ -67,15 +70,24 @@ export default class PlayScene extends Phaser.Scene{
         }
         else {
             this.map = window.GAME_RC.map;
-            const {color, name} = this.map; 
-            this.color=color;
-            this.name=name;
+            if(this.map){
+                const {color, name} = this.map; 
+                this.color=color;
+                this.name=name;
+            }
+            else{
+                this.map = GameState.getMap();
+                const {color, name} = this.map; 
+                this.color=color;
+                this.name=name;
+            }
         }
     }
     updateGameData=()=>{
         this.updateGameStateTimer = window.setInterval(()=>{
             const {opponentSpeed,score,timerElapsed,level,color,name, map} = this;
             this.gameState.setState({opponentSpeed,score,timerElapsed,level,color,name, map})
+            this.gameState.setMap(map);
         },5000);
        
     }
@@ -92,6 +104,18 @@ export default class PlayScene extends Phaser.Scene{
                 this.placeOpponent(opponent);
             }
         })
+    }
+    getHighScore = () => {
+        let h = localStorage.getItem('highScore');
+        if(h && !isNaN(parseInt(h))){
+            this.highScore=parseInt(h);
+        }
+    }
+    setHighScore = () => {
+        if(this.score > this.highScore){
+            this.highScore=this.score;
+            localStorage.setItem('highScore',this.highScore);
+        }
     }
     createTimer = () => {
         const timerConfig = {
@@ -133,15 +157,19 @@ export default class PlayScene extends Phaser.Scene{
         let roadRightBoundary = this.gassStation.x + this.gassStation.displayWidth * 0.1;
     
         if (this.car.x - carHalfWidth <= roadLeftBoundary) {
-            this.car.x = roadLeftBoundary + carHalfWidth;
+            this.car.x = roadLeftBoundary + carHalfWidth+5;
             this.car.body.setVelocityX(0);
         } else if (this.car.x + carHalfWidth >= roadRightBoundary) {
-            this.car.x = roadRightBoundary - carHalfWidth;
+            this.car.x = roadRightBoundary - carHalfWidth -5;
             this.car.body.setVelocityX(0);
         }
     }
     createScoreBoard = () => {
         this.scoreText = this.add.text(28,28,'Score : 0',{
+            fontSize: '28px',
+            color:'#000'
+        })
+        this.highScoreText = this.add.text(28,64,`High Score: ${this.highScore}`,{
             fontSize: '28px',
             color:'#000'
         })
@@ -252,7 +280,7 @@ export default class PlayScene extends Phaser.Scene{
                 y: 5
             }
         }).setOrigin(0.5, 0.5).setInteractive({ useHandCursor: true }).setDepth(1); 
-    
+        this.setHighScore();    
         restartButton.on('pointerdown', () => {
             this.time.paused=false;
             this.level=1;

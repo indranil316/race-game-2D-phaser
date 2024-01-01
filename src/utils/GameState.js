@@ -10,6 +10,18 @@ export default class GameState{
         this.name=null;
         this.map=null;
     }
+    static setMap=(map)=>{
+        localStorage.setItem('map',map);
+    }
+    static getMap = () => {
+        return JSON.parse(localStorage.getItem('map'))
+    }
+    static resetMap = () => {
+        localStorage.setItem('map', null);
+    }    
+    static getState=()=>{
+        return JSON.parse(localStorage.getItem('gameState'));
+    }
     setState=({opponentSpeed,score,timerElapsed,level,color,name, map})=>{
         this.opponentSpeed=opponentSpeed
         this.score=score;
@@ -29,13 +41,19 @@ export default class GameState{
         };
         localStorage.setItem('gameState',JSON.stringify(state));
     }
-    resetState = () => {
-        localStorage.setItem('gameState',null);
-    }
     getState=()=>{
         return JSON.parse(localStorage.getItem('gameState'));
     }
-    static getState=()=>{
-        return JSON.parse(localStorage.getItem('gameState'));
+    resetState = () => {
+        localStorage.setItem('gameState',null);
+    }
+    setMap=(map)=>{
+        localStorage.setItem('map',JSON.stringify(map));
+    }
+    getMap = () => {
+        return JSON.parse(localStorage.getItem('map'))
+    }
+    resetMap = () => {
+        localStorage.setItem('map', null);
     }
 }
